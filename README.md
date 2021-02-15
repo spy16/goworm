@@ -20,3 +20,7 @@ $ goworm -model c_elegans.csv -tick 100ms -threshold 30
 
 Note: Refer [c_elegans.csv](./c_elegans.csv) for model format.
 
+## References:
+
+1. <https://github.com/Flowx08/Celegans-simulation>
+2. <https://github.com/Connectome/GoPiGo>
