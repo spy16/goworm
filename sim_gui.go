@@ -1,3 +1,5 @@
+// +build gui
+
 package main
 
 import (
@@ -58,43 +60,5 @@ func (sim *simulator) Run() {
 		log.Printf("%s", strings.Join(spiked, ","))
 
 		win.Update()
-	}
-}
-
-func (sim *simulator) poke(cellGroup string) {
-	var cells []string
-
-	switch cellGroup {
-	case "nose":
-		cells = []string{
-			"FLPR", "FLPL",
-			"ASHL", "ASHR",
-			"IL1VL", "IL1VR",
-			"OLQDL", "OLQDR",
-			"OLQVR", "OLQVL",
-		}
-
-	case "food":
-		cells = []string{
-			"ADFL", "ADFR",
-			"ASGR", "ASGL",
-			"ASIL", "ASIR",
-			"ASJR", "ASJL",
-			"AWCL", "AWCR",
-			"AWAL", "AWAR",
-		}
-
-	case "anterior":
-		cells = []string{"FLPL", "FLPR", "BDUL", "BDUR", "SDQR"}
-
-	case "posterior":
-		cells = []string{"PVDL", "PVDR", "PVCL", "PVCR"}
-
-	default:
-		log.Printf("warn: invalid cell group '%s'", cellGroup)
-	}
-
-	for _, cellName := range cells {
-		sim.Brain.Cell(cellName).Fire()
 	}
 }

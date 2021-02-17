@@ -1,13 +1,13 @@
 # 🐛 GoWorm
 
-GoWorm is a simulation system for spiking neural networks. 
+GoWorm is a simulation system for spiking neural networks.
 
-`goworm` is generic enough to run different models defined using simple
-CSV files. A full connectome of C.Elegans is provided.
+`goworm` is generic enough to run different models defined using simple CSV files. A full connectome of C.Elegans is
+provided.
 
-## Usage 
+## Usage
 
-1. Install the tool using `go get -u -v github.com/spy16/goworm`
+1. Install the console version using `go get -u -v github.com/spy16/goworm`
 
 2. Run the model using:
 
