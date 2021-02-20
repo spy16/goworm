@@ -14,9 +14,9 @@ defined using simple JSON files. A full connectome of C.Elegans is provided.
     ```shell
     $ goworm -model c_elegans.json -tick 100ms -addr :8081
     
-    # -model configures the model file to read from (can be "-" to read from standard input)
+    # -model configures the model file to read from (can be "-" to read from standard input).
     # -tick configures the simulation step interval (use <1 second).
-    # -addr configures the
+    # -addr configures the HTTP API server address for the control API.
     ```
 
 3. Poke different cell groups using `curl http://localhost:8081/poke?group=nose`
