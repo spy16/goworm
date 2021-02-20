@@ -2,7 +2,7 @@
 
 GoWorm is a simulation system for spiking neural networks.
 
-`goworm` is generic enough to run different models defined using simple CSV files. A full connectome of C.Elegans is
+`goworm` is generic enough to run different models defined using simple JSON files. A full connectome of C.Elegans is
 provided.
 
 ## Usage
@@ -12,13 +12,13 @@ provided.
 2. Run the model using:
 
 ```shell
-$ goworm -model c_elegans.csv -tick 100ms -threshold 30
+$ goworm -model c_elegans.json -tick 100ms -threshold 30
 
 # -tick represents the simulation step interval (use <1 second).
 # -threshold represents the cell threshold for firing.
 ```
 
-Note: Refer [c_elegans.csv](./c_elegans.csv) for model format.
+Note: Refer [c_elegans.json](./c_elegans.json) for model format.
 
 ## References:
 

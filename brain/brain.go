@@ -1,45 +1,33 @@
 package brain
 
 import (
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
+	"net/http"
 	"strconv"
+	"strings"
 )
 
-// Load reads PointModel from a CSV file and returns an instance.
-func Load(file string, threshold float64) (*PointModel, error) {
-	f, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = f.Close() }()
-
-	pm := &PointModel{threshold: threshold}
-	if err := pm.fromCSVStream(f); err != nil {
-		return nil, err
-	}
-	return pm, nil
-}
-
-// PointModel represents a network of point-neurons.
+// PointModel represents a network of point-neurons. Zero value is ready
+// for use. Needs external synchronisation for concurrent use.
 type PointModel struct {
-	threshold float64
+	Groups    map[string][]string
+	name      string
 	cells     []Neuron
 	cellIds   map[string]int
 	conns     Graph
 	synapses  int
+	threshold float64
 }
 
 // Step re-computes state of all the cells and propagates spikes if any.
-func (model *PointModel) Step() []string {
+func (pm *PointModel) Step() []string {
 	var spikedCells []string
-	for i := range model.cells {
-		cell := &model.cells[i]
+	for i := range pm.cells {
+		cell := &pm.cells[i]
 		cell.Step(func() {
-			for _, target := range model.conns.Neighbors(cell.id) {
-				model.cells[target].nextState += model.conns.Weight(cell.id, target)
+			for _, target := range pm.conns.Neighbors(cell.id) {
+				pm.cells[target].nextState += pm.conns.Weight(cell.id, target)
 			}
 			spikedCells = append(spikedCells, cell.name)
 		})
@@ -50,62 +38,121 @@ func (model *PointModel) Step() []string {
 // Cell allocates a neuron in the model with given name and returns a pointer
 // to the cell. If the name already exists, returns the pointer to the existing
 // cell.
-func (model *PointModel) Cell(name string) *Neuron {
-	if idx, found := model.cellIds[name]; found {
-		return &model.cells[idx]
+func (pm *PointModel) Cell(name string) *Neuron {
+	if idx, found := pm.cellIds[name]; found {
+		return &pm.cells[idx]
 	}
 
-	if model.cellIds == nil {
-		model.cellIds = map[string]int{}
+	if pm.cellIds == nil {
+		pm.cellIds = map[string]int{}
 	}
 
-	cell := Neuron{
-		id:        len(model.cells),
-		name:      name,
-		threshold: model.threshold,
-	}
-	model.cells = append(model.cells, cell)
-	model.cellIds[name] = cell.id
-	return &model.cells[cell.id]
+	cell := Neuron{id: len(pm.cells), name: name, threshold: pm.threshold}
+	pm.cells = append(pm.cells, cell)
+	pm.cellIds[name] = cell.id
+	return &pm.cells[cell.id]
 }
 
-func (model *PointModel) fromCSVStream(rwc io.Reader) error {
-	model.cellIds = map[string]int{}
-	model.cells = nil
-	model.synapses = 0
+// Poke forces a pre-defined group of cells to fire.
+func (pm *PointModel) Poke(group string) []string {
+	cells, found := pm.Groups[group]
+	if !found {
+		return nil
+	}
+	for _, cell := range cells {
+		pm.Cell(cell).Fire()
+	}
+	return cells
+}
 
-	cr := csv.NewReader(rwc)
-	cr.Comment = ';'
-	cr.FieldsPerRecord = 3
-	cr.ReuseRecord = true
+func (pm *PointModel) String() string {
+	return fmt.Sprintf("PointModel{size=%d, synapses=%d}", len(pm.cells), pm.synapses)
+}
 
-	for {
-		rec, err := cr.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
+func (pm *PointModel) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
+	switch req.URL.Path {
+	case "/poke":
+		q := req.URL.Query().Get("group")
+		_ = json.NewEncoder(wr).Encode(pm.Poke(q))
+
+	default:
+		wr.WriteHeader(http.StatusNotFound)
+	}
+}
+
+func (pm *PointModel) MarshalJSON() ([]byte, error) {
+	var m jsonPointModel
+
+	m.Name = pm.name
+	m.Groups = pm.Groups
+	m.Cells = make([]jsonCellModel, len(pm.cells), len(pm.cells))
+
+	for i, cell := range pm.cells {
+		targets := pm.conns.Neighbors(cell.id)
+
+		jm := jsonCellModel{
+			Name:     cell.name,
+			Synapses: make([]string, len(targets), len(targets)),
+		}
+
+		for synapseIdx, postID := range targets {
+			jm.Synapses[synapseIdx] = fmt.Sprintf("%s,%f", pm.cells[postID].name, pm.conns.Weight(cell.id, postID))
+		}
+
+		m.Cells[i] = jm
+	}
+
+	return json.Marshal(m)
+}
+
+func (pm *PointModel) UnmarshalJSON(bytes []byte) error {
+	var m jsonPointModel
+	if err := json.Unmarshal(bytes, &m); err != nil {
+		return err
+	}
+
+	if m.Threshold == 0 {
+		m.Threshold = 1
+	}
+
+	pm.name = strings.TrimSpace(m.Name)
+	pm.Groups = m.Groups
+	pm.threshold = m.Threshold
+
+	for _, cm := range m.Cells {
+		cell := pm.Cell(cm.Name)
+		for _, syn := range cm.Synapses {
+			parts := strings.Split(syn, ",")
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid synapse '%s': must be in 'post,weight' format", syn)
 			}
-			return err
-		}
 
-		pre, post := rec[0], rec[1]
-		weight, err := strconv.ParseFloat(rec[2], 64)
-		if err != nil {
-			return err
-		}
+			weight, err := strconv.ParseFloat(parts[1], 64)
+			if err != nil {
+				return fmt.Errorf("invalid weight in synapse '%s': %v", syn, err)
+			}
 
-		model.synapses++
-		model.conns.ReWeight(
-			model.Cell(pre).id,
-			model.Cell(post).id,
-			weight,
-			true,
-		)
+			pm.synapses++
+			pm.conns.ReWeight(
+				cell.id,
+				pm.Cell(parts[0]).id,
+				weight,
+				true,
+			)
+		}
 	}
 
 	return nil
 }
 
-func (model *PointModel) String() string {
-	return fmt.Sprintf("PointModel{size=%d, synapses=%d}", len(model.cells), model.synapses)
+type jsonPointModel struct {
+	Name      string              `json:"name"`
+	Threshold float64             `json:"threshold"`
+	Groups    map[string][]string `json:"groups"`
+	Cells     []jsonCellModel     `json:"cells"`
+}
+
+type jsonCellModel struct {
+	Name     string   `json:"name"`
+	Synapses []string `json:"synapses"`
 }

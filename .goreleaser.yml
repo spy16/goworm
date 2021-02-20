@@ -20,4 +20,4 @@ archive:
   files:
     - LICENSE*
     - README.md
-    - c_elegans.csv
+    - c_elegans.json

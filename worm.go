@@ -1,4 +1,4 @@
-package worm
+package main
 
 import (
 	"context"
@@ -18,19 +18,6 @@ type Worm struct {
 	Brain    *brain.PointModel
 	Action   func(spikes []string)
 	Interval time.Duration
-	Sensory  map[string][]string
-}
-
-// Stimulate stimulates the cells belonging to the sensory group.
-func (w *Worm) Stimulate(sensoryGroup string) error {
-	cells, found := w.Sensory[sensoryGroup]
-	if !found {
-		return fmt.Errorf("invalid group: %v", sensoryGroup)
-	}
-	for _, cell := range cells {
-		w.Brain.Cell(cell).Fire()
-	}
-	return nil
 }
 
 // Live starts the lifetime of a worm and runs until context is cancelled.

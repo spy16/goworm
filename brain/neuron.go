@@ -15,27 +15,34 @@ type Neuron struct {
 	nextState float64
 }
 
-// Step updates the state of the cell and returns true if a spike occurred.
-func (nu *Neuron) Step(onSpike func()) bool {
-	nu.spiked = false // reset spike status
+// Fire forces the cell to spike.
+func (cell *Neuron) Fire() { cell.state = cell.threshold }
 
-	if nu.state >= nu.threshold {
-		onSpike()
-		nu.nextState = 0
-		nu.state = 0
-		nu.spiked = true
+// IsFiring returns true if the cell spiked in the last step.
+func (cell *Neuron) IsFiring() bool { return cell.spiked }
+
+// Apply applies the given stimulus to the cell.
+func (cell *Neuron) Apply(st float64) { cell.nextState += st }
+
+// Step updates the state of the cell and returns true if a spike occurred.
+func (cell *Neuron) Step(onSpike func()) bool {
+	cell.spiked = false // reset spike status
+
+	if cell.state >= cell.threshold {
+		if onSpike != nil {
+			onSpike()
+		}
+		cell.nextState = 0
+		cell.state = 0
+		cell.spiked = true
 		return true
 	}
 
-	nu.state += nu.nextState
-	nu.nextState = 0
+	cell.state += cell.nextState
+	cell.nextState = 0
 	return false
-
 }
 
-// Fire forces the cell to spike.
-func (nu *Neuron) Fire() { nu.state = nu.threshold }
-
-func (nu Neuron) String() string {
-	return fmt.Sprintf("Neuron{id='%d'}", nu.id)
+func (cell Neuron) String() string {
+	return fmt.Sprintf("Neuron{id='%d', spiking=%t}", cell.id, cell.IsFiring())
 }
