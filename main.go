@@ -24,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	var r io.Reader = os.Stdin
-	if *model != "" {
+	if *model != "" && *model != "-" {
 		f, err := os.Open(*model)
 		if err != nil {
 			fatalExit("failed to open model file: %v", err)
