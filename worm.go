@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/spy16/goworm/brain"
@@ -29,6 +30,13 @@ func (w *Worm) Live(ctx context.Context) error {
 			log.Printf("spikes: %v", spikes)
 		}
 	}
+
+	go func() {
+		log.Printf("starting server on %s...", *addr)
+		if err := http.ListenAndServe(*addr, w.Brain); err != nil {
+			log.Printf("server exited: %v", err)
+		}
+	}()
 
 	tick := time.NewTicker(w.Interval)
 	defer tick.Stop()
