@@ -1,23 +1,39 @@
 before:
   hooks:
-  - go mod download
+    - go mod download
+    - go generate ./...
 
 builds:
   - main: ./
+    env:
+      - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
       - windows
-    goarch:
-      - amd64
+      - darwin
 
-archive:
-  replacements:
-    amd64: 64-bit
-    386: 32-bit
-    darwin: macOS
-  format: zip
-  files:
-    - LICENSE*
-    - README.md
-    - c_elegans.json
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+      format: zip
+      files:
+        - LICENSE*
+        - README.md
+        - c_elegans.json
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-SNAPSHOT-{{.ShortCommit}}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
