@@ -1,6 +1,6 @@
 # 🐛 GoWorm
 
-[![GoDoc](https://godoc.org/github.com/spy16/goworm?status.svg)](https://godoc.org/github.com/spy16/goworm) [![Go Report Card](https://goreportcard.com/badge/github.com/spy16/goworm)](https://goreportcard.com/report/github.com/spy16/goworm) ![Go](https://github.com/spy16/goworm/workflows/Go/badge.svg?branch=master)
+[![GoDoc](https://godoc.org/github.com/spy16/goworm?status.svg)](https://godoc.org/github.com/spy16/goworm) [![Go Report Card](https://goreportcard.com/badge/github.com/spy16/goworm)](https://goreportcard.com/report/github.com/spy16/goworm) ![Go](https://github.com/spy16/goworm/actions/workflows/build.yml/badge.svg)
 
 GoWorm is a simulation system for spiking neural networks.
 
