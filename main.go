@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -22,14 +23,18 @@ var (
 func main() {
 	flag.Parse()
 
-	f, err := os.Open(*model)
-	if err != nil {
-		fatalExit("failed to open model file: %v", err)
+	var r io.Reader = os.Stdin
+	if *model != "" {
+		f, err := os.Open(*model)
+		if err != nil {
+			fatalExit("failed to open model file: %v", err)
+		}
+		defer func() { _ = f.Close() }()
+		r = f
 	}
-	defer func() { _ = f.Close() }()
 
 	var b brain.PointModel
-	if err := json.NewDecoder(f).Decode(&b); err != nil {
+	if err := json.NewDecoder(r).Decode(&b); err != nil {
 		fatalExit("failed to load model: %v\n", err)
 	}
 
