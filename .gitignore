@@ -16,4 +16,9 @@ bin/
 expt/
 sabre.iml
 
+ui/node_modules/
+ui/public/build/
+.DS_Store
+
 sample.csv
+

@@ -1,3 +1,5 @@
+// Package brain provides spiking neural network models to be used by the
+// GoWorm simulations.
 package brain
 
 import (
