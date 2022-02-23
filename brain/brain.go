@@ -13,7 +13,8 @@ import (
 // PointModel represents a network of point-neurons. Zero value is ready
 // for use. Needs external synchronisation for concurrent use.
 type PointModel struct {
-	Groups    map[string][]string
+	Groups map[string][]string
+
 	name      string
 	cells     []Neuron
 	cellIds   map[string]int
@@ -149,9 +150,9 @@ func (pm *PointModel) UnmarshalJSON(bytes []byte) error {
 
 type jsonPointModel struct {
 	Name      string              `json:"name"`
-	Threshold float64             `json:"threshold"`
-	Groups    map[string][]string `json:"groups"`
 	Cells     []jsonCellModel     `json:"cells"`
+	Groups    map[string][]string `json:"groups"`
+	Threshold float64             `json:"threshold"`
 }
 
 type jsonCellModel struct {

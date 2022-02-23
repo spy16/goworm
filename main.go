@@ -25,8 +25,8 @@ var (
 func main() {
 	flag.Parse()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go callOnInterrupt(cancel)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	b, err := loadModel(*model)
 	if err != nil {
@@ -61,11 +61,11 @@ func loadModel(path string) (*brain.PointModel, error) {
 		r = f
 	}
 
-	b := &brain.PointModel{}
-	if err := json.NewDecoder(r).Decode(b); err != nil {
+	var b brain.PointModel
+	if err := json.NewDecoder(r).Decode(&b); err != nil {
 		return nil, err
 	}
-	return b, nil
+	return &b, nil
 }
 
 func saveModel(outPath string, model *brain.PointModel) error {
@@ -84,11 +84,4 @@ func saveModel(outPath string, model *brain.PointModel) error {
 func fatalExit(msg string, args ...interface{}) {
 	fmt.Printf(msg, args...)
 	os.Exit(1)
-}
-
-func callOnInterrupt(cancel context.CancelFunc) {
-	sigCh := make(chan os.Signal)
-	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
-	<-sigCh
-	cancel()
 }
